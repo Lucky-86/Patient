@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:patient/classes/profile_screen.dart';
+import 'package:patient/classes/grid_screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -13,7 +14,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: ProfileScreen(),
+      home: GridScreen(),
     );
   }
 }

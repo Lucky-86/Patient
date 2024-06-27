@@ -62,7 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<Map<String, dynamic>?> _fetchStructureDefinition(
       String typeCode) async {
     String jsonString =
-        await rootBundle.loadString('assets/$typeCode.profile.json');
+        await rootBundle.loadString('assets/json/$typeCode.profile.json');
     return json.decode(jsonString);
   }
 
@@ -83,25 +83,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
               future: _fetchStructureDefinition(typeCode),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return ListTile(
-                    title: Text(
-                      element['path'],
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    trailing: CircularProgressIndicator(),
-                  );
+                  return CircularProgressIndicator();
                 } else if (snapshot.hasError) {
-                  return ListTile(
-                    title: Text(
-                      element['path'],
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    trailing: Icon(Icons.error),
+                  return IconButton(
+                    icon: Icon(Icons.refresh, color: Colors.red),
+                    onPressed: () {
+                      setState(() {
+                        _fetchStructureDefinition(typeCode);
+                      });
+                    },
                   );
                 } else if (snapshot.hasData) {
                   return ExpansionTile(
                     title: Text(
-                      element['path'],
+                      element['path'].split('.')[1],
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     childrenPadding: const EdgeInsets.symmetric(
@@ -142,7 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    patientProfile = loadProfile('assets/Patient.profile.json');
+    patientProfile = loadProfile('assets/json/Patient.profile.json');
   }
 
   @override
