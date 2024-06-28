@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 
 class ProfileScreen extends StatefulWidget {
+  late final String path;
+  ProfileScreen({required this.path});
+
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
 }
@@ -54,15 +57,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'MoneyQuantity'
   ];
 
-  Future<Map<String, dynamic>> loadProfile(String path) async {
+  Future<Map<String, dynamic>> loadProfile(path) async {
     String jsonString = await rootBundle.loadString(path);
     return json.decode(jsonString);
   }
 
-  Future<Map<String, dynamic>?> _fetchStructureDefinition(
+  Future<Map<String, dynamic>> _fetchStructureDefinition(
       String typeCode) async {
     String jsonString =
-        await rootBundle.loadString('assets/json/$typeCode.profile.json');
+        await rootBundle.loadString('assets/$typeCode.profile.json');
     return json.decode(jsonString);
   }
 
@@ -137,7 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    patientProfile = loadProfile('assets/json/Patient.profile.json');
+    patientProfile = loadProfile(widget.path);
   }
 
   @override

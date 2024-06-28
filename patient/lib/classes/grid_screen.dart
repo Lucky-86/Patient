@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:convert';
+import 'package:patient/classes/profile_screen.dart';
 
 class GridScreen extends StatefulWidget {
   @override
@@ -17,7 +18,7 @@ class _GridScreenState extends State<GridScreen> {
     'Logical model',
   ];
 
-  String? selectedOption = 'Resource profile';
+  String selectedOption = 'Resource profile';
 
   @override
   void initState() {
@@ -29,7 +30,7 @@ class _GridScreenState extends State<GridScreen> {
     final manifestContent = await rootBundle.loadString('AssetManifest.json');
     final Map<String, dynamic> manifestMap = json.decode(manifestContent);
     final jsonFiles = manifestMap.keys
-        .where((String key) => key.contains('assets/json/'))
+        .where((String key) => key.contains('assets/'))
         .toList();
 
     setState(() {
@@ -57,7 +58,7 @@ class _GridScreenState extends State<GridScreen> {
                   groupValue: selectedOption,
                   onChanged: (value) {
                     setState(() {
-                      selectedOption = value;
+                      selectedOption = value!;
                     });
                   },
                 );
@@ -79,10 +80,18 @@ class _GridScreenState extends State<GridScreen> {
                       String fileNameWithoutExtension =
                           jsonFileNames[index].split('.').first;
                       return GestureDetector(
-                        onTap: () {
-                          // Handle tap on the grid item (file name)
-                          print('Tapped ${jsonFileNames[index]}');
-                        },
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProfileScreen(
+                              path: jsonFileNames[index],
+                            ),
+                          ),
+                        ),
+                        // onTap: () {
+                        //   // Handle tap on the grid item (file name)
+                        //   print('Tapped ${jsonFileNames[index]}');
+                        // },
                         child: Card(
                           elevation: 2.0,
                           child: Stack(
