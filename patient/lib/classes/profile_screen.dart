@@ -160,6 +160,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return Center(child: Text('Select an element to view properties'));
     }
 
+    List<String>? conditions = element['condition']?.cast<String>();
+
     TextEditingController minController =
         TextEditingController(text: element['min'].toString());
     TextEditingController maxController =
@@ -372,6 +374,83 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           SizedBox(height: 8),
+          if (element.containsKey('constraint'))
+            ExpansionTile(
+              title: Text('Constraints'),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (var constraint in element['constraint'])
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextFormField(
+                              initialValue: constraint['key'],
+                              decoration: InputDecoration(
+                                  labelText: 'Key',
+                                  border: OutlineInputBorder()),
+                              readOnly: true,
+                            ),
+                            SizedBox(height: 8),
+                            TextFormField(
+                              initialValue: constraint['severity'],
+                              decoration: InputDecoration(
+                                  labelText: 'Severity',
+                                  border: OutlineInputBorder()),
+                              readOnly: true,
+                            ),
+                            SizedBox(height: 8),
+                            TextFormField(
+                              initialValue: constraint['human'],
+                              decoration: InputDecoration(
+                                  labelText: 'Human',
+                                  border: OutlineInputBorder()),
+                              readOnly: true,
+                            ),
+                            SizedBox(height: 8),
+                            TextFormField(
+                              initialValue: constraint['expression'],
+                              decoration: InputDecoration(
+                                  labelText: 'Expression',
+                                  border: OutlineInputBorder()),
+                              readOnly: true,
+                            ),
+                            if (constraint.containsKey('xpath'))
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: TextFormField(
+                                  initialValue: constraint['xpath'],
+                                  decoration: InputDecoration(
+                                      labelText: 'Xpath',
+                                      border: OutlineInputBorder()),
+                                  readOnly: true,
+                                ),
+                              ),
+                            SizedBox(height: 8),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          SizedBox(height: 8),
+          conditions != null
+              ? ExpansionTile(
+                  title: Text('Conditions'),
+                  children: conditions.map((condition) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 4.0),
+                      child: Text(condition, style: TextStyle(fontSize: 16)),
+                    );
+                  }).toList(),
+                )
+              : Container(),
         ],
       ),
     );
