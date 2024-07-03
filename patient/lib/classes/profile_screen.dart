@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 
 class ProfileScreen extends StatefulWidget {
-  late final String path;
+  final String path;
   ProfileScreen({required this.path});
 
   @override
@@ -57,7 +57,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'MoneyQuantity'
   ];
 
-  Future<Map<String, dynamic>> loadProfile(path) async {
+  Map<String, dynamic>? selectedElement;
+  final ValueNotifier<String?> minErrorTextNotifier = ValueNotifier(null);
+  final ValueNotifier<String?> maxErrorTextNotifier = ValueNotifier(null);
+
+  Future<Map<String, dynamic>> loadProfile(String path) async {
     String jsonString = await rootBundle.loadString(path);
     return json.decode(jsonString);
   }
@@ -122,6 +126,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           fields.add(
             ListTile(
               title: Text(element['path'].split('.')[1]),
+              onTap: () {
+                setState(() {
+                  selectedElement = element;
+                });
+              },
+              selected: selectedElement == element,
+              selectedTileColor: Colors.grey[300],
             ),
           );
         }
@@ -129,12 +140,207 @@ class _ProfileScreenState extends State<ProfileScreen> {
         fields.add(
           ListTile(
             title: Text(element['path']),
+            onTap: () {
+              setState(() {
+                selectedElement = element;
+              });
+            },
+            selected: selectedElement == element,
+            selectedTileColor: Colors.grey[300],
           ),
         );
       }
     }
 
     return fields;
+  }
+
+  Widget _buildElementProperties(Map<String, dynamic>? element) {
+    if (element == null) {
+      return Center(child: Text('Select an element to view properties'));
+    }
+
+    TextEditingController minController =
+        TextEditingController(text: element['min'].toString());
+    TextEditingController maxController =
+        TextEditingController(text: element['max'].toString());
+
+    void validateMin() {
+      int baseMin = element['base']['min'] ?? 0;
+      String baseMax = element['base']['max'] ?? '0';
+
+      int? minValue = int.tryParse(minController.text);
+
+      if (minValue != null) {
+        if (baseMax == '*') {
+          if (minValue < baseMin) {
+            minErrorTextNotifier.value =
+                'The minimum cardinality cannot be less than the base profile\'s minimum cardinality or greater than the base profile\'s maximum cardinality';
+          } else {
+            minErrorTextNotifier.value = null;
+          }
+        } else if (minValue < baseMin || minValue > int.parse(baseMax)) {
+          minErrorTextNotifier.value =
+              'The minimum cardinality cannot be less than the base profile\'s minimum cardinality or greater than the base profile\'s maximum cardinality';
+        } else {
+          minErrorTextNotifier.value = null;
+        }
+      } else {
+        minErrorTextNotifier.value = 'Enter a valid number';
+      }
+    }
+
+    void validateMax() {
+      int baseMin = element['base']['min'] ?? 0;
+      String baseMax = element['base']['max'] ?? '0';
+
+      int? maxValue;
+
+      if (maxController.text != '*') {
+        maxValue = int.tryParse(maxController.text);
+
+        if (maxValue != null) {
+          if (baseMax == '*') {
+            if (maxValue < baseMin) {
+              maxErrorTextNotifier.value =
+                  'The maximum cardinality cannot be less than the base profile\'s minimum cardinality';
+            } else {
+              maxErrorTextNotifier.value = null;
+            }
+          } else {
+            if (maxValue < baseMin || maxValue > int.parse(baseMax)) {
+              maxErrorTextNotifier.value =
+                  'The maximum cardinality cannot be less than the base profile\'s minimum cardinality or greater than the base profile\'s maximum cardinality';
+            } else {
+              maxErrorTextNotifier.value = null;
+            }
+          }
+        } else {
+          maxErrorTextNotifier.value = 'Enter a valid number';
+        }
+      } else {
+        maxErrorTextNotifier.value = null;
+      }
+    }
+
+    minController.addListener(validateMin);
+    maxController.addListener(validateMax);
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: TextEditingController(text: element['id']),
+            decoration: InputDecoration(
+              labelText: 'Element ID',
+              border: OutlineInputBorder(),
+            ),
+            readOnly: true,
+          ),
+          SizedBox(height: 16),
+          TextField(
+            controller: TextEditingController(text: element['short'] ?? 'N/A'),
+            decoration: InputDecoration(
+              labelText: 'Short Description',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: null,
+          ),
+          SizedBox(height: 16),
+          TextField(
+            controller:
+                TextEditingController(text: element['definition'] ?? 'N/A'),
+            decoration: InputDecoration(
+              labelText: 'Definition',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: null,
+          ),
+          SizedBox(height: 16),
+          ExpansionTile(
+            title: Text('Type'),
+            children: [
+              for (var type in element['type'])
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4.0),
+                  child: Text(type['code'], style: TextStyle(fontSize: 16)),
+                ),
+            ],
+          ),
+          SizedBox(height: 8),
+          ExpansionTile(
+            title: Text('Cardinality'),
+            children: [
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Row(
+                  children: [
+                    Text('Minimum:'),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: minController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              hintText: '0 || 1',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          ValueListenableBuilder<String?>(
+                            valueListenable: minErrorTextNotifier,
+                            builder: (context, errorText, child) {
+                              return errorText != null
+                                  ? Text(errorText,
+                                      style: TextStyle(color: Colors.red))
+                                  : Container();
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Row(
+                  children: [
+                    Text('Maximum:'),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: maxController,
+                            decoration: InputDecoration(
+                              hintText: '0 || 1 || *',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          ValueListenableBuilder<String?>(
+                            valueListenable: maxErrorTextNotifier,
+                            builder: (context, errorText, child) {
+                              return errorText != null
+                                  ? Text(errorText,
+                                      style: TextStyle(color: Colors.red))
+                                  : Container();
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+        ],
+      ),
+    );
   }
 
   @override
@@ -145,25 +351,141 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    String profileName = widget.path
+        .split('/')
+        .last
+        .split('.')
+        .first; // Extract profile name from file path
     return Scaffold(
       appBar: AppBar(
-        title: Text('Profile Viewer'),
+        title: Text(
+            'Profile on ${profileName[0].toUpperCase()}${profileName.substring(1)}'), // Capitalize first letter
       ),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: patientProfile,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.hasData) {
-            return ListView(
-              children: _buildFormFields(snapshot.data!['snapshot']['element']),
-            );
-          } else {
-            return Center(child: Text('No data found'));
-          }
-        },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.5),
+                        spreadRadius: 2,
+                        blurRadius: 5,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          // Define your button actions here
+                        },
+                        child: Row(
+                          children: [
+                            Icon(Icons.star),
+                            SizedBox(width: 5),
+                            Text('Extend'),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // Define your button actions here
+                        },
+                        child: Row(
+                          children: [
+                            Icon(Icons.cut),
+                            SizedBox(width: 5),
+                            Text('Slice'),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // Define your button actions here
+                        },
+                        child: Row(
+                          children: [
+                            Icon(Icons.add_circle),
+                            SizedBox(width: 5),
+                            Text('Add Slice'),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // Define your button actions here
+                        },
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete),
+                            SizedBox(width: 5),
+                            Text('Remove'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: FutureBuilder<Map<String, dynamic>>(
+                    future: patientProfile,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      } else if (snapshot.hasData) {
+                        return ListView(
+                          children: _buildFormFields(
+                              snapshot.data!['snapshot']['element']),
+                        );
+                      } else {
+                        return Center(child: Text('No data found'));
+                      }
+                    },
+                  ),
+                ),
+                VerticalDivider(width: 1),
+                Expanded(
+                  flex: 1,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Element Properties',
+                          style: TextStyle(
+                              fontSize: 24, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 16),
+                        Expanded(
+                            child: _buildElementProperties(selectedElement)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
