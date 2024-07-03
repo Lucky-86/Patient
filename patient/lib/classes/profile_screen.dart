@@ -338,8 +338,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           SizedBox(height: 8),
+          ExpansionTile(
+            title: Text('Attributes'),
+            children: [
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildCheckbox('Is Summary', element['isSummary'] ?? false,
+                        (value) {
+                      setState(() {
+                        element['isSummary'] = value;
+                      });
+                    }),
+                    _buildCheckbox(
+                        'Is Modifier', element['isModifier'] ?? false, (value) {
+                      setState(() {
+                        element['isModifier'] = value;
+                      });
+                    }),
+                    _buildCheckbox(
+                        'Must Support', element['mustSupport'] ?? false,
+                        (value) {
+                      setState(() {
+                        element['mustSupport'] = value;
+                      });
+                    }),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
         ],
       ),
+    );
+  }
+
+  Widget _buildCheckbox(
+      String title, bool value, ValueChanged<bool?> onChanged) {
+    return Row(
+      children: [
+        Checkbox(
+          value: value,
+          onChanged: onChanged,
+        ),
+        Text(title),
+      ],
     );
   }
 
